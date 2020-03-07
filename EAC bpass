@@ -1,0 +1,45 @@
+    #include <Windows.h>
+    #include <MinHook.h>
+    #include <string>
+    HANDLE 访问GAME = NULL;
+     
+    typedef BOOL (WINAPI*型式CreateProcessW)(LPCWSTR, LPWSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCWSTR, LPSTARTUPINFOW, LPPROCESS_INFORMATION);
+    型式CreateProcessW 原版的CreateProcessW = NULL;
+     
+    BOOL WINAPI 偏差CreateProcessW(LPCWSTR lpApplicationName,LPWSTR lpCommandLine,LPSECURITY_ATTRIBUTES lpProcessAttributes,LPSECURITY_ATTRIBUTES lpThreadAttributes,BOOL bInheritHandles,DWORD dwCreationFlags,LPVOID lpEnvironment,LPCWSTR lpCurrentDirectory,LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation) {
+        BOOL 原版的 = 原版的CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+        if (std::wstring(lpApplicationName).find(L"Apex") != std::wstring::npos) { // GameName？ == 程序名称！
+            访问GAME = lpProcessInformation->hProcess;
+            for (;;) {
+                Sleep(1000); // 保存处理
+            }
+        }
+     
+        return 原版的;
+    }
+    DWORD WINAPI 初始功能(LPVOID) { // 未使用的参数 
+        MH_Initialize();
+        MH_CreateHook(CreateProcessW, (LPVOID)&偏差CreateProcessW, (LPVOID*)&原版的CreateProcessW);
+        MH_EnableHook(CreateProcessW);
+        while (访问GAME == NULL) {
+            Sleep(250);
+        }
+     
+        // 例子！ Apex Apex Apex
+        for(;;) {
+            
+            Sleep(500);
+            long 地址BASE = NULL;
+            ReadProcessMemory(访问GAME, (LPCVOID)0x7ff75fb80000, &地址BASE, sizeof 地址BASE, NULL);
+            printf("r5apex base value> %d\n", 地址BASE);
+        }
+    }
+    BOOL WINAPI DllMain(HINSTANCE, DWORD REASON, LPVOID) { // 未使用的参数
+        if ( REASON == DLL_PROCESS_ATTACH ) {
+            AllocConsole(); // 显示文字
+            FILE* F = NULL; // 显示文字
+            freopen_s(&F, "CONOUT$", "w", stdout); // 显示文字
+            CreateThread(NULL , NULL, 初始功能, NULL, NULL, NULL);
+        }
+        return TRUE;
+    }
